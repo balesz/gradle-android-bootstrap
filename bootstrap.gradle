@@ -1,0 +1,65 @@
+def projectName = 'TestProject'
+def packageName = 'net.solutinno.testproject'
+
+def templateUrl = 'https://github.com/balesz/android-template-Application/archive/master.zip'
+
+def templateFilename = 'template.zip'
+def templateOutputDir = 'template'
+
+task downloadTemplate << {
+  def f = new File(templateFilename)
+	if (f.exists()) f.delete();
+	new URL(templateUrl).withInputStream{ i -> f.withOutputStream { it << i } }
+}
+
+task unzipTemplate(type: Copy, dependsOn: downloadTemplate) {
+	from zipTree(file(templateFilename))
+	into file(templateOutputDir)
+	includeEmptyDirs false
+	eachFile { it.path = it.relativePath.segments[1..-1].join('/') }
+}
+
+task renameDirectories(dependsOn: unzipTemplate) << {
+	delete(templateFilename)
+	file("$templateOutputDir/Application").renameTo("$templateOutputDir/$projectName")
+	if (templateOutputDir != '.') {
+		file(templateOutputDir).renameTo("android-$projectName")
+		templateOutputDir = "android-$projectName"
+	}
+}
+
+task changeFiles(dependsOn: renameDirectories) << { // Create settings.gradle file
+	delete("$templateOutputDir/settings.gradle")
+	file("$templateOutputDir/settings.gradle").text = "include ':$projectName'\r\n"
+}
+
+changeFiles << { // Create build.gradle file
+	def f = file("$templateOutputDir/$projectName/build.gradle")
+	f.text = f.text.replaceFirst("packageName .*") { "packageName '$packageName'" }
+}
+
+changeFiles << { // Create AndroidManifest.xml file
+	def f = file("$templateOutputDir/$projectName/src/main/AndroidManifest.xml")
+	f.text = f.text.replaceFirst("net.solutinno.template") { "$packageName" }
+}
+
+changeFiles << { // Create strings.xml file
+	def f = file("$templateOutputDir/$projectName/src/main/res/values/strings.xml")
+	f.text = f.text.replaceFirst("Application") { "$projectName" }
+}
+
+changeFiles << { // Create MainActivity.java
+	def f = file("$templateOutputDir/$projectName/src/main/MainActivity.java")
+	f.text = f.text.replaceFirst("package .*") { "package $packageName;" }
+	def path = packageName.replaceAll(/\./, "/")
+	mkdir("$templateOutputDir/$projectName/src/main/java/$path")
+	copy {
+		from f
+		into "$templateOutputDir/$projectName/src/main/java/$path"
+	}
+	delete(f)
+}
+
+task create(dependsOn: changeFiles) << {
+
+}
