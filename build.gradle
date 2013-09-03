@@ -19,9 +19,9 @@ task downloadTemplate(dependsOn: checkVariables) << {
 
 task unzipTemplate(type: Copy, dependsOn: downloadTemplate) {
 	from zipTree(file(templateFilename))
-	into file(templateOutputDir)
 	includeEmptyDirs false
 	eachFile { it.path = it.relativePath.segments[1..-1].join('/') }
+	into file(templateOutputDir)
 }
 
 task renameDirectories(dependsOn: unzipTemplate) << {
@@ -34,6 +34,10 @@ task renameDirectories(dependsOn: unzipTemplate) << {
 task changeFiles(dependsOn: renameDirectories) << { // Create settings.gradle file
 	delete("$templateOutputDir/settings.gradle")
 	file("$templateOutputDir/settings.gradle").text = "include ':$projectName'\r\n"
+}
+
+changeFiles << { // Create .gitignore file
+	file("$templateOutputDir/gitignore").renameTo("$templateOutputDir/.gitignore")
 }
 
 changeFiles << { // Create build.gradle file
