@@ -6,8 +6,13 @@ def templateUrl = 'https://github.com/balesz/android-template-Application/archiv
 def templateFilename = 'template.zip'
 def templateOutputDir = 'template'
 
-task downloadTemplate << {
-  def f = new File(templateFilename)
+task checkVariables << {
+	if (templateOutputDir == '.')
+		throw new GradleException("The templateOutputDir variable is invalid!")
+}
+
+task downloadTemplate(dependsOn: checkVariables) << {
+	def f = new File(templateFilename)
 	if (f.exists()) f.delete();
 	new URL(templateUrl).withInputStream{ i -> f.withOutputStream { it << i } }
 }
@@ -22,10 +27,8 @@ task unzipTemplate(type: Copy, dependsOn: downloadTemplate) {
 task renameDirectories(dependsOn: unzipTemplate) << {
 	delete(templateFilename)
 	file("$templateOutputDir/Application").renameTo("$templateOutputDir/$projectName")
-	if (templateOutputDir != '.') {
-		file(templateOutputDir).renameTo("android-$projectName")
-		templateOutputDir = "android-$projectName"
-	}
+	file(templateOutputDir).renameTo("android-$projectName")
+	templateOutputDir = "android-$projectName"
 }
 
 task changeFiles(dependsOn: renameDirectories) << { // Create settings.gradle file
