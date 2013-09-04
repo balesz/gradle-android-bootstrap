@@ -1,5 +1,6 @@
 def projectName = 'TestProject'
 def packageName = 'net.solutinno.testproject'
+def applicationName = "#$projectName"
 
 def templateUrl = 'https://github.com/balesz/android-template-Application/archive/master.zip'
 
@@ -52,7 +53,7 @@ changeFiles << { // Create AndroidManifest.xml file
 
 changeFiles << { // Create strings.xml file
 	def f = file("$templateOutputDir/$projectName/src/main/res/values/strings.xml")
-	f.text = f.text.replaceFirst("Application") { "$projectName" }
+	f.text = f.text.replaceFirst("Application") { "$applicationName" }
 }
 
 changeFiles << { // Create MainActivity.java
